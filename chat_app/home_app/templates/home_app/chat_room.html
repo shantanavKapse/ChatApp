@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+    <title>Chat Room</title>
+  </head>
+  <body class="bg-dark">
+
+      <div class="container-fluid">
+        <div class="container-fluid m-2 text-light">
+          <div class="row">
+            <div class="col">
+              <h5>Current User:</h5>
+              <h3>{{username}}</h3>
+            </div>
+            <div class="col m-2 d-flex justify-content-end">
+              <a href="{% url 'logout' %}">Logout</a>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-1 text-center">
+          <div class="col"></div>
+          <div class="col">
+            <h4 class="text-light">Current Room</h4>
+          </div>
+          <div class="col"></div>
+        </div>
+        <div class="row mb-3 text-center">
+          <div class="col"></div>
+          <div class="col">
+            <h2 class="text-light">{{room_name}}</h2>
+          </div>
+          <div class="col"></div>
+        </div>
+        <div class="row m-4">
+          <div class="col"></div>
+          <div class="col-6">
+            <textarea class="w-100 bg-dark text-light p-2" id="chat-log" rows="18"></textarea><br>
+          </div>
+          <div class="col"></div>
+        </div>
+        <div class="row m-3">
+          <div class="col"></div>
+          <div class="col-6">
+            <div class="input-group w-100">
+              <input id="chat-message-input" type="text" class="form-control bg-dark text-light" aria-describedby="button-addon2">
+              <button id="chat-message-submit" class="btn btn-primary" type="button">Send</button>
+            </div>
+          </div>
+          <div class="col"></div>
+        </div>
+      </div>
+
+
+    {{ room_name|json_script:"room-name" }}
+    {{ username|json_script:"username" }}
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js" integrity="sha512-SxQulwFs2B38bmUJtBSo9tD07MDrtCbY8me3AOZ14tRknCPTeMDLvCQV4ekhs8R0o9QPnW5HQanKfveexVcwLA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+        const username = JSON.parse(document.getElementById('username').textContent);
+
+        const chatSocket = new ReconnectingWebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/rooms/'
+            + roomName
+            + '/'
+        );
+
+        chatSocket.onopen = function(e) {
+            chatSocket.send(JSON.stringify({'command': 'fetch_messages'}));
+        }
+
+        chatSocket.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+
+            if (data['command'] === 'messages'){
+                for ( let i=data['messages'].length-1; i>=0; i--){
+                    var nd = data['messages'][i];
+                    var author = nd['author'];
+                    var message_content = nd['content'];
+
+                    document.querySelector('#chat-log').value += (author + ': ' + message_content + '\n');
+                }
+            }
+            else if (data['command'] === 'new_message') {
+                var message = data['message'];
+                var author = message['author'];
+                var message_content = message['content'];
+
+                document.querySelector('#chat-log').value += (author + ': ' + message_content + '\n');
+            }
+            document.querySelector('#chat-log').scrollTop = document.querySelector('#chat-log').scrollHeight;
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeypress = function(e) {
+            if (e.keyCode === 13) {
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            var messageInputDom = document.querySelector('#chat-message-input');
+            var message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'command': 'new_message',
+                'message': message,
+                'from': username
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+
+  </body>
+</html>
