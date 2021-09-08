@@ -16,8 +16,13 @@
               <h5>Current User:</h5>
               <h3>{{username}}</h3>
             </div>
-            <div class="col m-2 d-flex justify-content-end">
-              <a href="{% url 'logout' %}">Logout</a>
+            <div class="col m-2 d-flex flex-column align-items-end">
+              <h5>
+                <a href="{% url 'logout' %}">Logout</a>
+              </h5>
+              <h5>
+                <a href="{% url 'index' %}">Leave Room</a>
+              </h5>
             </div>
           </div>
         </div>
@@ -33,12 +38,14 @@
           <div class="col">
             <h2 class="text-light">{{room_name}}</h2>
           </div>
-          <div class="col"></div>
+          <div class="col">
+
+          </div>
         </div>
         <div class="row m-4">
           <div class="col"></div>
           <div class="col-6">
-            <textarea class="w-100 bg-dark text-light p-2" id="chat-log" rows="18"></textarea><br>
+            <textarea class="w-100 bg-dark text-light p-2 border border-primary border-2" id="chat-log" rows="18"></textarea><br>
           </div>
           <div class="col"></div>
         </div>
